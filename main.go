@@ -2,31 +2,48 @@ package main
 
 import (
 	"log"
-	"time"
+	// "time"
 	"net/http"
+	"os"
 
-	"github.com/gin-gonic/autotls"
+	"github.com/joho/godotenv"
 	"github.com/gin-gonic/gin"
 )
+
+func loadEnv() (string, string){
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatal("Error loading .env file")
+		log.Fatal("Error: %v", err)
+		return "", ""
+	}
+
+	serverCrt := os.Getenv("SERVER_CRT_PATH")
+	serverKey := os.Getenv("SERVER_KEY_PATH")
+	return serverCrt, serverKey
+}
 
 // https server
 func main() {
 	router:= gin.Default()
 	// Official default settings
-	server := &http.Server{
-		Addr: ":8080",
-		Handler: router,
-		ReadTimeout: 10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
-	}
+	// server := &http.Server{
+	// 	Addr: ":8080",
+	// 	Handler: router,
+	// 	ReadTimeout: 10 * time.Second,
+	// 	WriteTimeout: 10 * time.Second,
+	// 	MaxHeaderBytes: 1 << 20,
+	// }
 
-	server.ListenAndServe()
-
-	router.GET("/greeting", func(c *gin.Context) {
+	// server.ListenAndServe()
+	router.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Hello World!")
 	})
-	router.RunTLS(":8080", "")
+
+	serverCrt, serverKey := loadEnv()
+	log.Println(serverCrt, serverKey)
+	router.RunTLS("localhost:8080", serverCrt, serverKey)
 }
 
 /* 今後の実装に利用するかも
