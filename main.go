@@ -6,16 +6,16 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
-func loadEnv() (string, string){
+func loadEnv() (string, string) {
 	err := godotenv.Load(".env")
 
 	if err != nil {
 		log.Fatal("Error loading .env file")
-		log.Fatal("Error: %v", err)
+		log.Printf("Error: %v", err)
 		return "", ""
 	}
 
@@ -26,7 +26,7 @@ func loadEnv() (string, string){
 
 // https server
 func main() {
-	router:= gin.Default()
+	router := gin.Default()
 	// Official default settings
 	// server := &http.Server{
 	// 	Addr: ":8080",
