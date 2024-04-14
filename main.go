@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	// "time"
-	"net/http"
+
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -27,23 +27,13 @@ func loadEnv() (string, string) {
 // https server
 func main() {
 	router := gin.Default()
-	// Official default settings
-	// server := &http.Server{
-	// 	Addr: ":8080",
-	// 	Handler: router,
-	// 	ReadTimeout: 10 * time.Second,
-	// 	WriteTimeout: 10 * time.Second,
-	// 	MaxHeaderBytes: 1 << 20,
-	// }
-
-	// server.ListenAndServe()
 	router.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Hello World!")
+		c.JSON(200, gin.H{
+			"message": "Hello World!",
+		})
 	})
 
-	serverCrt, serverKey := loadEnv()
-	log.Println(serverCrt, serverKey)
-	router.RunTLS("localhost:8080", serverCrt, serverKey)
+	router.Run("localhost:8080")
 }
 
 /* 今後の実装に利用するかも
