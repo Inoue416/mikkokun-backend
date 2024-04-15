@@ -1,67 +1,39 @@
 package main
 
 import (
-	"log"
-	// "time"
-
-	"os"
+	docs "mikkokun/docs"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func loadEnv() (string, string) {
-	err := godotenv.Load(".env")
+// @BasePath /api/v1
 
-	if err != nil {
-		log.Fatal("Error loading .env file")
-		log.Printf("Error: %v", err)
-		return "", ""
+// PingExample godoc
+// @Summary ping example
+// @Schemes
+// @Description do ping
+// @Tags example
+// @Accept json
+// @Produce json
+// @Success 200 {string} Helloworld
+// @Router /example/helloworld [get]
+func Helloworld(g *gin.Context) {
+	g.JSON(http.StatusOK, "helloworld")
+}
+
+func main() {
+	r := gin.Default()
+	docs.SwaggerInfo.BasePath = "/api/v1"
+	v1 := r.Group("/api/v1")
+	{
+		eg := v1.Group("/example")
+		{
+			eg.GET("/helloworld", Helloworld)
+		}
 	}
-
-	serverCrt := os.Getenv("SERVER_CRT_PATH")
-	serverKey := os.Getenv("SERVER_KEY_PATH")
-	return serverCrt, serverKey
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	r.Run(":8080")
 }
-
-// https server
-func main() {
-	router := gin.Default()
-	router.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Hello World!",
-		})
-	})
-
-	router.Run("localhost:8080")
-}
-
-/* 今後の実装に利用するかも
-package main
-
-import (
-  "log"
-  "net/http"
-
-  "github.com/gin-gonic/autotls"
-  "github.com/gin-gonic/gin"
-  "golang.org/x/crypto/acme/autocert"
-)
-
-func main() {
-  r := gin.Default()
-
-  // Ping handler
-  r.GET("/ping", func(c *gin.Context) {
-    c.String(http.StatusOK, "pong")
-  })
-
-  m := autocert.Manager{
-    Prompt:     autocert.AcceptTOS,
-    HostPolicy: autocert.HostWhitelist("example1.com", "example2.com"),
-    Cache:      autocert.DirCache("/var/www/.cache"),
-  }
-
-  log.Fatal(autotls.RunWithManager(r, &m))
-}
-*/
