@@ -102,7 +102,11 @@ func WebsocketHandler(c *gin.Context) {
 	connections[clientId] = conn
 	conn.WriteJSON(ResponseMessageOnly{
 		IsSuccess: true,
-		Message:   "Success Connection!!\n",
+		Message: fmt.Sprintf(
+			"Success Connection!!\nYour id is %s\nYour seat number is %s\n",
+			clientId,
+			clientSeatNumber,
+		),
 	})
 
 	for {
