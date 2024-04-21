@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +27,7 @@ type WebSocketRequest struct {
 	SeatNumber string `json:"SeatNumber"`
 }
 
-type AlertMessage struct {
+type AlertMessageType struct {
 	TargetSeatNumber string
 	Message          string
 	TimeLimitSec     int
@@ -49,8 +50,8 @@ func broadcastMessage(myId string, message string) {
 }
 
 // アラートメッセージを送信
-func alertMessage(myId string, targetSeatNumber string, timeLimitSec int) {
-	alert := AlertMessage{
+func AlertMessage(myId string, targetSeatNumber string, timeLimitSec int) {
+	alert := AlertMessageType{
 		TargetSeatNumber: targetSeatNumber,
 		Message:          "密告されました。\nタイマーを止めると密告を防ぐことができます。",
 		TimeLimitSec:     timeLimitSec,
@@ -82,9 +83,10 @@ func alertMessage(myId string, targetSeatNumber string, timeLimitSec int) {
 // TODO: タイムアップ時にブロードキャスト　(これはフロント側なのでこちらでは実装せず、実装ずみのブロードキャスト機能を使う)
 
 // WebSocketハンドラー
-func websocketHandler(c *gin.Context) {
+func WebsocketHandler(c *gin.Context) {
 	// WebSocketのアップグレード
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	fmt.Println("WebsocketHandler...")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "WebSocket upgrade failed"})
 		return
@@ -98,6 +100,10 @@ func websocketHandler(c *gin.Context) {
 	// WebSocketコネクションをマップに格納
 	clientInformations[clientSeatNumber] = clientId
 	connections[clientId] = conn
+	conn.WriteJSON(ResponseMessageOnly{
+		IsSuccess: true,
+		Message:   "Success Connection!!\n",
+	})
 
 	for {
 		// メッセージの読み取り
