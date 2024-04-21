@@ -1,39 +1,21 @@
 package main
 
 import (
-	docs "mikkokun/docs"
-	"net/http"
+	"backend/handler"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
-	swaggerfiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-// @BasePath /api/v1
-
-// PingExample godoc
-// @Summary ping example
-// @Schemes
-// @Description do ping
-// @Tags example
-// @Accept json
-// @Produce json
-// @Success 200 {string} Helloworld
-// @Router /example/helloworld [get]
-func Helloworld(g *gin.Context) {
-	g.JSON(http.StatusOK, "helloworld")
-}
-
 func main() {
+	fmt.Printf("Start Server 🚀 \n")
+	fmt.Printf(handler.Broadcast)
+	// Ginルーターの初期化
 	r := gin.Default()
-	docs.SwaggerInfo.BasePath = "/api"
-	v1 := r.Group("/api")
-	{
-		eg := v1.Group("/websocket")
-		{
-			eg.GET("/helloworld", Helloworld)
-		}
-	}
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+
+	// WebSocketハンドラーの登録
+	r.GET("/ws")
+
+	// サーバーの起動
 	r.Run(":8080")
 }
