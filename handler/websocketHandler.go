@@ -84,17 +84,17 @@ func AlertMessage(myId string, targetSeatNumber string, timeLimitSec int) {
 
 // リクエストがあったシート番号がすでにないかを確認
 // ある場合はエラーメッセージを返す
-func isExistSeatNumber(seatNumber string) bool {
-	for seatNum, _ := range connections {
-		if seatNum == seatNumber {
-			fmt.Printf("Exist seat number: %s\n", seatNumber)
-			fmt.Printf("Compare seat number: %s\n", seatNum)
-			return true
-		}
-	}
-	fmt.Printf("Is not exist seat number : %s\n", seatNumber)
-	return false
-}
+// func isExistSeatNumber(seatNumber string) bool {
+// 	for seatNum, _ := range connections {
+// 		if seatNum == seatNumber {
+// 			fmt.Printf("Exist seat number: %s\n", seatNumber)
+// 			fmt.Printf("Compare seat number: %s\n", seatNum)
+// 			return true
+// 		}
+// 	}
+// 	fmt.Printf("Is not exist seat number : %s\n", seatNumber)
+// 	return false
+// }
 
 // WebSocketハンドラー
 func WebsocketHandler(c *gin.Context) {
