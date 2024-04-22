@@ -12,11 +12,13 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
 // WebSocketコネクションを格納するマップ
 var connections = make(map[string]*websocket.Conn)
-var clientInformations = make(map[string]string)
 
 const Broadcast = "broadcast"
 const Alert = "alert"
@@ -38,13 +40,11 @@ type ResponseMessageOnly struct {
 	Message   string `json:"message"`
 }
 
-func broadcastMessage(myId string, message string) {
+func broadcastMessage(message string) {
 	// メッセージをブロードキャスト
-	for clientId, c := range connections {
-		if clientId != myId {
-			if err := c.WriteJSON(ResponseMessageOnly{Message: message, IsSuccess: true}); err != nil {
-				break
-			}
+	for _, c := range connections {
+		if err := c.WriteJSON(ResponseMessageOnly{Message: message, IsSuccess: true}); err != nil {
+			break
 		}
 	}
 }
@@ -82,29 +82,54 @@ func AlertMessage(myId string, targetSeatNumber string, timeLimitSec int) {
 
 // TODO: タイムアップ時にブロードキャスト　(これはフロント側なのでこちらでは実装せず、実装ずみのブロードキャスト機能を使う)
 
+// リクエストがあったシート番号がすでにないかを確認
+// ある場合はエラーメッセージを返す
+func isExistSeatNumber(seatNumber string) bool {
+	for seatNum, _ := range connections {
+		if seatNum == seatNumber {
+			fmt.Printf("Exist seat number: %s\n", seatNumber)
+			fmt.Printf("Compare seat number: %s\n", seatNum)
+			return true
+		}
+	}
+	fmt.Printf("Is not exist seat number : %s\n", seatNumber)
+	return false
+}
+
 // WebSocketハンドラー
 func WebsocketHandler(c *gin.Context) {
 	// WebSocketのアップグレード
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	fmt.Println("WebsocketHandler...")
+	fmt.Println("*** WebsocketHandler ***")
 	if err != nil {
+		fmt.Printf("Can not upgrade: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "WebSocket upgrade failed"})
 		return
 	}
-	defer conn.Close()
 
 	// クライアントの識別子を生成
-	clientId := c.Query("uuid")
 	clientSeatNumber := c.Query("seatnumber")
 
+	// defer func() {
+	// 	conn.Close()
+	// 	// コネクションをマップから削除
+	// 	delete(connections, clientSeatNumber)
+	// }()
+
+	// if isExistSeatNumber(clientSeatNumber) {
+	// 	fmt.Printf("*** client seat number is already exist ***\n")
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"message": "すでにその座席番号は接続されています。\n別の座席番号を指定してください。",
+	// 	})
+	// 	conn.Close()
+	// 	return
+	// }
 	// WebSocketコネクションをマップに格納
-	clientInformations[clientSeatNumber] = clientId
-	connections[clientId] = conn
+	connections[clientSeatNumber] = conn
 	conn.WriteJSON(ResponseMessageOnly{
 		IsSuccess: true,
 		Message: fmt.Sprintf(
-			"Success Connection!!\nYour id is %s\nYour seat number is %s\n",
-			clientId,
+			"Success Connection!!\nYour seat number is %s\n",
 			clientSeatNumber,
 		),
 	})
@@ -115,17 +140,19 @@ func WebsocketHandler(c *gin.Context) {
 		if err := conn.ReadJSON(&request); err != nil {
 			break
 		}
+		fmt.Println("*** Request Data ***")
+		fmt.Println(request.ActionType)
+		fmt.Println(request.SeatNumber)
+		fmt.Println("*********")
 		switch request.ActionType {
 		case Broadcast:
-			broadcastMessage(clientId, "sample")
+			broadcastMessage("sample")
 		case Alert:
 			break
 		default:
 			break
 		}
 	}
-
-	// コネクションをマップから削除
-	delete(connections, clientId)
-	delete(clientInformations, clientId)
+	conn.Close()
+	delete(connections, clientSeatNumber)
 }
