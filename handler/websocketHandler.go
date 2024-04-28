@@ -26,7 +26,7 @@ const Alert = "alert"
 // WebSocketメッセージの構造体
 type WebSocketRequest struct {
 	ActionType string `json:"ActionType"`
-	SeatNumber string `json:"SeatNumber"`
+	SeatNumber string `json:"TargetSeatNumber"`
 }
 
 type AlertMessageType struct {
@@ -42,8 +42,12 @@ type ResponseMessageOnly struct {
 
 func broadcastMessage(message string) {
 	// メッセージをブロードキャスト
-	for _, c := range connections {
+	for idx, c := range connections {
+		println("Index (SeatNumber): %s", idx)
 		if err := c.WriteJSON(ResponseMessageOnly{Message: message, IsSuccess: true}); err != nil {
+			println("Error: %v", err)
+			c.Close()
+			delete(connections, idx)
 			break
 		}
 	}
@@ -146,6 +150,7 @@ func WebsocketHandler(c *gin.Context) {
 		fmt.Println("*********")
 		switch request.ActionType {
 		case Broadcast:
+			fmt.Println("--- Broadcast case ---")
 			broadcastMessage("sample")
 		case Alert:
 			break
