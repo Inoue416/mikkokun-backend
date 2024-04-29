@@ -22,8 +22,10 @@ var connections = make(map[string]*websocket.Conn)
 
 const Broadcast = "broadcast"
 const Alert = "alert"
+const Timeup = "timeup"
 
-const TIMELITMISEC = 300
+// TODO: Debug
+const TIMELITMISEC = 5 // 300
 
 // WebSocketメッセージの構造体
 type WebSocketRequest struct {
@@ -80,6 +82,22 @@ func AlertMessage(myId string, targetSeatNumber string, timeLimitSec int) {
 	}
 }
 
+func TimeupBroadcast(targetSeatNumber string) {
+	message := "座席番号 " + targetSeatNumber + " は居眠りをしています！！！"
+	for clientId, c := range connections {
+		if clientId == targetSeatNumber {
+			continue
+		}
+		if err := c.WriteJSON(ResponseMessageOnly{
+			ActionType: "broadcast",
+			Message:    message,
+		}); err != nil {
+			fmt.Println("Error: ", err)
+			return
+		}
+	}
+}
+
 // TODO: コネクションが切れた際のブロードキャスト
 
 // TODO: タイムアップ時にブロードキャスト　(これはフロント側なのでこちらでは実装せず、実装ずみのブロードキャスト機能を使う)
@@ -116,10 +134,7 @@ func WebsocketHandler(c *gin.Context) {
 	connections[clientSeatNumber] = conn
 	conn.WriteJSON(ResponseMessageOnly{
 		ActionType: "broadcast",
-		Message: fmt.Sprintf(
-			"Success Connection!!\nYour seat number is %s\n",
-			clientSeatNumber,
-		),
+		Message:    "Success Connection!!",
 	})
 
 	for {
@@ -128,16 +143,14 @@ func WebsocketHandler(c *gin.Context) {
 		if err := conn.ReadJSON(&request); err != nil {
 			break
 		}
-		fmt.Println("*** Request Data ***")
-		fmt.Println(request.ActionType)
-		fmt.Println(request.SeatNumber)
-		fmt.Println("*********")
+
 		switch request.ActionType {
 		case Broadcast:
-			fmt.Println("--- Broadcast case ---")
-			broadcastMessage("sample")
+			broadcastMessage("Broadcast: sample")
 		case Alert:
 			AlertMessage(clientSeatNumber, request.SeatNumber, TIMELITMISEC)
+		case Timeup:
+			TimeupBroadcast(request.SeatNumber)
 		default:
 			break
 		}
