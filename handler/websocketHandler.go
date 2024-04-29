@@ -30,21 +30,22 @@ type WebSocketRequest struct {
 }
 
 type AlertMessageType struct {
+	ActionType       string
 	TargetSeatNumber string
 	Message          string
 	TimeLimitSec     int
 }
 
 type ResponseMessageOnly struct {
-	IsSuccess bool   `json:"isSuccess"`
-	Message   string `json:"message"`
+	ActionType string `json:"ActionType"`
+	Message    string `json:"Message"`
 }
 
 func broadcastMessage(message string) {
 	// メッセージをブロードキャスト
 	for idx, c := range connections {
 		println("Index (SeatNumber): %s", idx)
-		if err := c.WriteJSON(ResponseMessageOnly{Message: message, IsSuccess: true}); err != nil {
+		if err := c.WriteJSON(ResponseMessageOnly{Message: message, ActionType: "broadcast"}); err != nil {
 			println("Error: %v", err)
 			c.Close()
 			delete(connections, idx)
@@ -56,30 +57,24 @@ func broadcastMessage(message string) {
 // アラートメッセージを送信
 func AlertMessage(myId string, targetSeatNumber string, timeLimitSec int) {
 	alert := AlertMessageType{
+		ActionType:       "alert",
 		TargetSeatNumber: targetSeatNumber,
 		Message:          "密告されました。\nタイマーを止めると密告を防ぐことができます。",
 		TimeLimitSec:     timeLimitSec,
 	}
-	errorMessage := "そのユーザーは現在接続していません。"
-	successMessave := "ターゲットにアラートを送信しました。"
+	successMessage := "ターゲットにアラートを送信しました。"
 
 	for clientId, c := range connections {
 		if clientId == targetSeatNumber {
 			if err := c.WriteJSON(alert); err != nil {
-				connections[myId].WriteJSON(ResponseMessageOnly{
-					IsSuccess: false,
-					Message:   errorMessage})
 				return
 			}
 			connections[myId].WriteJSON(ResponseMessageOnly{
-				IsSuccess: true,
-				Message:   successMessave})
+				ActionType: "broadcast",
+				Message:    successMessage})
 			return
 		}
 	}
-	connections[myId].WriteJSON(ResponseMessageOnly{
-		IsSuccess: false,
-		Message:   errorMessage})
 }
 
 // TODO: コネクションが切れた際のブロードキャスト
@@ -114,24 +109,10 @@ func WebsocketHandler(c *gin.Context) {
 	// クライアントの識別子を生成
 	clientSeatNumber := c.Query("seatnumber")
 
-	// defer func() {
-	// 	conn.Close()
-	// 	// コネクションをマップから削除
-	// 	delete(connections, clientSeatNumber)
-	// }()
-
-	// if isExistSeatNumber(clientSeatNumber) {
-	// 	fmt.Printf("*** client seat number is already exist ***\n")
-	// 	c.JSON(http.StatusBadRequest, gin.H{
-	// 		"message": "すでにその座席番号は接続されています。\n別の座席番号を指定してください。",
-	// 	})
-	// 	conn.Close()
-	// 	return
-	// }
 	// WebSocketコネクションをマップに格納
 	connections[clientSeatNumber] = conn
 	conn.WriteJSON(ResponseMessageOnly{
-		IsSuccess: true,
+		ActionType: "broadcast",
 		Message: fmt.Sprintf(
 			"Success Connection!!\nYour seat number is %s\n",
 			clientSeatNumber,
