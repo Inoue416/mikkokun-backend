@@ -23,6 +23,8 @@ var connections = make(map[string]*websocket.Conn)
 const Broadcast = "broadcast"
 const Alert = "alert"
 
+const TIMELITMISEC = 300
+
 // WebSocketメッセージの構造体
 type WebSocketRequest struct {
 	ActionType string `json:"ActionType"`
@@ -135,7 +137,7 @@ func WebsocketHandler(c *gin.Context) {
 			fmt.Println("--- Broadcast case ---")
 			broadcastMessage("sample")
 		case Alert:
-			AlertMessage(clientSeatNumber, request.SeatNumber, 0)
+			AlertMessage(clientSeatNumber, request.SeatNumber, TIMELITMISEC)
 		default:
 			break
 		}
