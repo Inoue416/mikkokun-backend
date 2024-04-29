@@ -67,6 +67,7 @@ func AlertMessage(myId string, targetSeatNumber string, timeLimitSec int) {
 	for clientId, c := range connections {
 		if clientId == targetSeatNumber {
 			if err := c.WriteJSON(alert); err != nil {
+				fmt.Println("Error: ", err)
 				return
 			}
 			connections[myId].WriteJSON(ResponseMessageOnly{
@@ -134,7 +135,7 @@ func WebsocketHandler(c *gin.Context) {
 			fmt.Println("--- Broadcast case ---")
 			broadcastMessage("sample")
 		case Alert:
-			break
+			AlertMessage(clientSeatNumber, request.SeatNumber, 0)
 		default:
 			break
 		}
