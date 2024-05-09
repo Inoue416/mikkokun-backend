@@ -15,40 +15,171 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/example/helloworld": {
+        "/checkSameSeatNumber": {
             "get": {
-                "description": "do ping",
+                "description": "使用されていればtrue、使用されていなければfalseを返す (およびメッセージ)",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "example"
+                "summary": "受け取った座席番号がすでにないかを確認",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Seat Number",
+                        "name": "seatnumber",
+                        "in": "query",
+                        "required": true
+                    }
                 ],
-                "summary": "ping example",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.CheckSameSeatNumberRepspose"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/greeting": {
+            "get": {
+                "description": "return Hello World",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "return a greeting",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.GreetingResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/ws": {
+            "get": {
+                "description": "Websocket通信に切り替わる",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Websocket通信接続",
+                "parameters": [
+                    {
+                        "description": "Request Body",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.WebSocketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ResponseMessageOnly"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
         }
+    },
+    "definitions": {
+        "handler.CheckSameSeatNumberRepspose": {
+            "type": "object",
+            "properties": {
+                "isExists": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.ResponseMessageOnly": {
+            "type": "object",
+            "properties": {
+                "ActionType": {
+                    "type": "string"
+                },
+                "Message": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.WebSocketRequest": {
+            "type": "object",
+            "properties": {
+                "ActionType": {
+                    "type": "string"
+                },
+                "TargetSeatNumber": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.GreetingResponse": {
+            "type": "object",
+            "properties": {
+                "Message": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "externalDocs": {
+        "description": "OpenAPI",
+        "url": "https://swagger.io/resources/open-api/"
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "/api/v1",
+	Version:          "1.0.0",
+	Host:             "localhost:8080",
+	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "MikkokuApp Backend API",
+	Description:      "密っこくんのバックエンドAPI",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

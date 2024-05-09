@@ -20,9 +20,10 @@ var upgrader = websocket.Upgrader{
 // WebSocketコネクションを格納するマップ
 var connections = make(map[string]*websocket.Conn)
 
-const Broadcast = "broadcast"
-const Alert = "alert"
-const Timeup = "timeup"
+const BroadcastType = "broadcast"
+const AlertType = "alert"
+const TimeupType = "timeup"
+const LogoutType = "logout"
 
 // TODO: Debug
 const TIMELITMISEC = 300
@@ -98,10 +99,6 @@ func TimeupBroadcast(targetSeatNumber string) {
 	}
 }
 
-// TODO: コネクションが切れた際のブロードキャスト
-
-// TODO: タイムアップ時にブロードキャスト　(これはフロント側なのでこちらでは実装せず、実装ずみのブロードキャスト機能を使う)
-
 // リクエストがあったシート番号がすでにないかを確認
 // ある場合はエラーメッセージを返す
 func isExistSeatNumber(seatNumber string) bool {
@@ -116,22 +113,43 @@ func isExistSeatNumber(seatNumber string) bool {
 	return false
 }
 
+type CheckSameSeatNumberRepspose struct {
+	IsExists bool   `json:"isExists"`
+	Message  string `json:"message"`
+}
+
+// CheckSameSeatNumber godoc
+// @Summary      受け取った座席番号がすでにないかを確認
+// @Description  使用されていればtrue、使用されていなければfalseを返す (およびメッセージ)
+// @Accept       json
+// @Produce      json
+// @Param        seatnumber  query  string  true  "Seat Number"
+// @Success      200 {object} CheckSameSeatNumberRepspose
+// @Failure      400
+// @Failure      404
+// @Failure      500
+// @Router       /checkSameSeatNumber [get]
 func CheckSameSeatNumber(c *gin.Context) {
 	seatNumber := c.Query("seatnumber")
+	if seatNumber == "" {
+		c.JSON(http.StatusOK, CheckSameSeatNumberRepspose{
+			IsExists: true,
+			Message:  "座席を指定して下さい。",
+		})
+	}
 	if isExistSeatNumber(seatNumber) {
-		c.JSON(http.StatusOK, gin.H{
-			"isExists": true,
-			"message":  "すでにこの座席番号は使用されています。",
+		c.JSON(http.StatusOK, CheckSameSeatNumberRepspose{
+			IsExists: true,
+			Message:  "すでにこの座席番号は使用されています。",
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"isExists": false,
-		"message":  "この座席番号は使用できます。",
+	c.JSON(http.StatusOK, CheckSameSeatNumberRepspose{
+		IsExists: false,
+		Message:  "この座席番号は使用可能です。",
 	})
 }
 
-// WebSocketハンドラー
 func WebsocketHandler(c *gin.Context) {
 	// WebSocketのアップグレード
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -155,21 +173,29 @@ func WebsocketHandler(c *gin.Context) {
 	for {
 		// メッセージの読み取り
 		var request WebSocketRequest
+		var logoutFlag bool
 		if err := conn.ReadJSON(&request); err != nil {
 			break
 		}
-
+		logoutFlag = false
 		switch request.ActionType {
-		case Broadcast:
+		case BroadcastType:
 			broadcastMessage("Broadcast: sample")
-		case Alert:
+		case AlertType:
 			AlertMessage(clientSeatNumber, request.SeatNumber, TIMELITMISEC)
-		case Timeup:
+		case TimeupType:
 			TimeupBroadcast(request.SeatNumber)
+		case LogoutType:
+			fmt.Println("Action: Logout")
+			logoutFlag = true
 		default:
+			break
+		}
+		if logoutFlag {
 			break
 		}
 	}
 	conn.Close()
 	delete(connections, clientSeatNumber)
+	fmt.Println("--- Close Connection ---")
 }

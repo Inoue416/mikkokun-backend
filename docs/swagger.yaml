@@ -1,20 +1,109 @@
-basePath: /api/v1
+basePath: /
+definitions:
+  handler.CheckSameSeatNumberRepspose:
+    properties:
+      isExists:
+        type: boolean
+      message:
+        type: string
+    type: object
+  handler.ResponseMessageOnly:
+    properties:
+      ActionType:
+        type: string
+      Message:
+        type: string
+    type: object
+  handler.WebSocketRequest:
+    properties:
+      ActionType:
+        type: string
+      TargetSeatNumber:
+        type: string
+    type: object
+  main.GreetingResponse:
+    properties:
+      Message:
+        type: string
+    type: object
+externalDocs:
+  description: OpenAPI
+  url: https://swagger.io/resources/open-api/
+host: localhost:8080
 info:
   contact: {}
+  description: 密っこくんのバックエンドAPI
+  title: MikkokuApp Backend API
+  version: 1.0.0
 paths:
-  /example/helloworld:
+  /checkSameSeatNumber:
     get:
       consumes:
       - application/json
-      description: do ping
+      description: 使用されていればtrue、使用されていなければfalseを返す (およびメッセージ)
+      parameters:
+      - description: Seat Number
+        in: query
+        name: seatnumber
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: string
-      summary: ping example
-      tags:
-      - example
+            $ref: '#/definitions/handler.CheckSameSeatNumberRepspose'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: 受け取った座席番号がすでにないかを確認
+  /greeting:
+    get:
+      consumes:
+      - application/json
+      description: return Hello World
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.GreetingResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: return a greeting
+  /ws:
+    get:
+      consumes:
+      - application/json
+      description: Websocket通信に切り替わる
+      parameters:
+      - description: Request Body
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/handler.WebSocketRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.ResponseMessageOnly'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Websocket通信接続
 swagger: "2.0"
