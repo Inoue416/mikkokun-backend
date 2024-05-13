@@ -11,33 +11,22 @@
 - 開発途中のため、まだまだ汎用的に使用することはできません。
 
 ## 技術スタック
-- TypeScript
-- React
-- Next.js
-- TailwindCSS
-- daisyUI
-- Websocket通信
-- pnpm
+- Golang
+- gin
+- gorilla/websocket
+- Swaggo (swagger)
 
-他の詳細はpackge.jsonを参照して下さい。
+他の詳細はgo.modを参照して下さい。
 
 
 ## コマンド一覧
 ```
-pnpm dev         # 本番環境https実行　(未実装)
+go run main.go    # local環境でhttpアプリ起動
 
-pnpm dev-http    # local環境でhttpアプリ起動
-
-pnpm fomatter    # fomatter実行
-
-pnpm lintter     # lintter実行
-
-pnpm build       # build
-
-pnpm safe-fixed  # formatter and lintter + α 問題箇所があれば修正
+# TODO: コマンドを書き増やす
 ```
 
-## 実行画面
+## 実行画面 (フロントのREADMEと共通)
 ### ホーム画面
 <img src="./asset-readme/home.png" alt="home" title="ホーム画面">
 
